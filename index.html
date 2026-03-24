@@ -3,6 +3,19 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script>
+(function(){
+  const k='gw_auth';
+  if(sessionStorage.getItem(k)!=='ok'){
+    let pw=prompt('Enter password to access GovWell Territory Dashboard:');
+    if(pw!=='Permitplease'){
+      document.write('<div style="font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;background:#0d1117;color:#e2e8f0;font-size:18px">Access denied.</div>');
+      throw new Error('Access denied');
+    }
+    sessionStorage.setItem(k,'ok');
+  }
+})();
+</script>
 <title>GovWell — Territory Dashboard</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
