@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script>
+(function(){
+  const k='gw_auth';
+  if(sessionStorage.getItem(k)!=='ok'){
+    let pw=prompt('Enter password to access GovWell Territory Dashboard:');
+    if(pw!=='Permitplease'){
+      document.write('<div style="font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;background:#080808;color:#e2e8f0;font-size:18px">Access denied.</div>');
+      throw new Error('Access denied');
+    }
+    sessionStorage.setItem(k,'ok');
+  }
+})();
+</script>
+<title>GovWell — Territory Dashboard</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#080808;color:#e2e8f0;height:100vh;overflow:hidden;display:flex;flex-direction:column}
+
+/* ── Header ─────────────────────────────────────────────── */
+#header{display:flex;align-items:center;justify-content:space-between;padding:0 14px;height:46px;background:#0f0f0f;border-bottom:1px solid #222;flex-shrink:0;gap:10px}
+.logo{font-size:15px;font-weight:800;color:#fff;letter-spacing:-0.5px;white-space:nowrap}
+.logo span{color:#34d399}
+.subtitle{font-size:10px;color:#444;white-space:nowrap;padding-left:10px;border-left:1px solid #222}
+.date-chip{font-size:9px;padding:2px 7px;border-radius:10px;background:#1a1a1a;border:1px solid #333;color:#888;white-space:nowrap}
+.header-left{display:flex;align-items:center;gap:10px}
+
+/* ── BDR Pills ──────────────────────────────────────────── */
+.bdr-row{display:flex;align-items:center;gap:4px;flex-wrap:nowrap}
+.pill-lbl{font-size:9px;color:#444;text-transform:uppercase;letter-spacing:.05em;white-space:nowrap;padding-right:2px}
+.bdr-pill{font-size:10px;padding:3px 8px;border-radius:20px;border:1px solid #222;cursor:pointer;color:#555;background:transparent;transition:all .12s;white-space:nowrap;font-weight:500;font-family:inherit}
+.bdr-pill:hover{color:#e2e8f0;border-color:#444}
+.bdr-pill.active{background:#1a3060;border-color:#3b82f6;color:#60a5fa;font-weight:600}
+
+/* ── Body ───────────────────────────────────────────────── */
+#body{display:flex;flex:1;overflow:hidden}
+#mapWrap{flex:1;position:relative;overflow:hidden;background:#080808}
+svg#map{width:100%;height:100%;cursor:grab}
+svg#map:active{cursor:grabbing}
+
+/* ── State paths — PURE NEUTRAL GRAY for max dot contrast ── */
+/* States use ONLY gray tones so every colored dot pops */
+.state-path{stroke:#111;stroke-width:0.8;cursor:pointer;transition:filter .12s}
+.state-path:hover{filter:brightness(1.7)}
+.state-path.selected{stroke:#fff;stroke-width:1.5;filter:brightness(1.3)}
+.state-label{font-family:'Inter',sans-serif;font-weight:700;pointer-events:none;text-anchor:middle;dominant-baseline:middle;fill:rgba(255,255,255,0.45)}
+
+/* ── Dots ───────────────────────────────────────────────── */
+.dot{cursor:pointer;transition:filter .1s}
+.dot:hover{filter:brightness(1.6) drop-shadow(0 0 4px white)}
+.dot.dimmed{opacity:.08}
+
+/* ── Dot labels (deep zoom) ─────────────────────────────── */
+.dot-label{font-family:'Inter',sans-serif;font-size:8px;pointer-events:none;dominant-baseline:middle}
+
+/* ── Back / zoom controls ───────────────────────────────── */
+#backBtn{position:absolute;top:10px;left:10px;background:#111;border:1px solid #444;border-radius:7px;color:#ccc;font-size:11px;font-weight:600;padding:5px 12px;cursor:pointer;display:none;z-index:10;font-family:inherit;transition:all .12s}
+#backBtn.visible{display:block}
+#backBtn:hover{background:#222;color:#fff;border-color:#888}
+#zoomCtrls{position:absolute;bottom:14px;left:14px;display:flex;flex-direction:column;gap:3px;z-index:5}
+#zoomCtrls button{width:28px;height:28px;background:#111;border:1px solid #333;border-radius:6px;color:#888;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-family:inherit;line-height:1;transition:all .12s}
+#zoomCtrls button:hover{background:#333;color:#fff}
+
+/* ── Dot filter toggle — VIVID for usability ────────────── */
+#dotToggle{position:absolute;top:10px;left:50%;transform:translateX(-50%);display:none;z-index:10;background:#111;border:1px solid #333;border-radius:24px;padding:4px;gap:3px;align-items:center;box-shadow:0 4px 20px rgba(0,0,0,.8)}
+#dotToggle.visible{display:flex}
+.dt-btn{font-size:11px;padding:5px 16px;border-radius:18px;border:none;cursor:pointer;font-weight:700;font-family:inherit;color:#777;background:transparent;transition:all .15s;white-space:nowrap;letter-spacing:.01em}
+.dt-btn:hover{color:#ddd;background:#1e1e1e}
+/* All active */
+.dt-btn.active-all{background:#2a2a2a;color:#fff}
+/* Customers active: amber gold */
+.dt-btn.active-customers{background:#78350f;color:#fde68a;box-shadow:0 0 12px rgba(251,191,36,.5)}
+/* Pipeline active: muted gold */
+.dt-btn.active-pipeline{background:#92400e;color:#fed7aa;box-shadow:0 0 12px rgba(251,146,60,.3)}
+/* Touched active: sky blue */
+.dt-btn.active-touched{background:#0369a1;color:#fff;box-shadow:0 0 12px rgba(56,189,248,.5)}
+/* Untouched active: slate */
+.dt-btn.active-untouched{background:#334155;color:#e2e8f0;box-shadow:0 0 12px rgba(226,232,240,.3)}
+
+/* ── Tooltip ────────────────────────────────────────────── */
+#tooltip{position:fixed;background:rgba(10,10,10,0.97);border:1px solid #333;border-radius:10px;padding:11px 14px;font-size:11px;pointer-events:none;display:none;z-index:100;max-width:240px;box-shadow:0 8px 32px rgba(0,0,0,0.9)}
+.tt-name{font-weight:700;color:#fff;margin-bottom:7px;font-size:12px;line-height:1.3}
+.tt-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:2.5px 0;border-bottom:1px solid rgba(255,255,255,0.06);font-size:10.5px;color:#666}
+.tt-row:last-child{border-bottom:none}
+.tt-val{color:#e2e8f0;font-weight:600;text-align:right;max-width:150px}
+.tt-badge{display:inline-flex;align-items:center;gap:3px;padding:1px 7px;border-radius:8px;font-size:9.5px;font-weight:700}
+.tt-new{display:inline-flex;align-items:center;gap:3px;padding:1px 6px;border-radius:8px;font-size:9px;font-weight:700;background:rgba(52,211,153,0.15);border:1px solid rgba(52,211,153,0.35);color:#34d399}
+
+/* ── State hover tooltip ────────────────────────────────── */
+#stateTip{position:fixed;background:rgba(10,10,10,0.96);border:1px solid #333;border-radius:8px;padding:9px 12px;font-size:11px;pointer-events:none;display:none;z-index:50;min-width:170px;box-shadow:0 4px 20px rgba(0,0,0,.8)}
+#filterTip{position:fixed;background:rgba(10,10,10,0.97);border:1px solid #1e3a5f;border-radius:8px;padding:10px 13px;font-size:11px;pointer-events:none;display:none;z-index:200;min-width:200px;box-shadow:0 4px 20px rgba(0,0,0,.9)}
+
+/* ── Legend ─────────────────────────────────────────────── */
+#legend{position:absolute;bottom:14px;right:14px;background:rgba(10,10,10,.95);border:1px solid #222;border-radius:10px;padding:11px 14px;min-width:155px;z-index:5}
+.leg-title{font-size:8px;text-transform:uppercase;letter-spacing:1px;color:#444;margin-bottom:9px;font-weight:700}
+.leg-row{display:flex;align-items:center;gap:7px;margin-bottom:5px;font-size:10px;color:#777}
+.leg-row:last-child{margin-bottom:0}
+.leg-icon{width:18px;height:18px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.leg-cnt{margin-left:auto;font-size:9px;color:#444;f
